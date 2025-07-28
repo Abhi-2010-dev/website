@@ -1,55 +1,142 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-  <title>My Location with Leaflet</title>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Drone Control Panel</title>
 
   <!-- Leaflet CSS -->
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
-
-  <!-- Leaflet JS -->
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 
   <style>
-    body, html { height: 100%; margin: 0; }
-    #map { height: 100%; }
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { font-family: sans-serif; background: #f0f0f0; display: grid; grid-template-columns: 1fr 1fr; grid-template-rows: auto auto auto; gap: 10px; padding: 10px; }
+
+    .panel {
+      background: #fff;
+      border-radius: 8px;
+      padding: 10px;
+      box-shadow: 0 0 10px rgba(0,0,0,0.05);
+      min-height: 200px;
+    }
+
+    #map { height: 100%; min-height: 200px; }
+
+    #camera video, #camera img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      border-radius: 5px;
+    }
+
+    #controls button {
+      padding: 10px 20px;
+      margin: 5px;
+      font-weight: bold;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+    }
+
+    #start { background: #4CAF50; color: white; }
+    #stop { background: #f44336; color: white; }
+    #rtl  { background: #2196F3; color: white; }
+
+    #terminal {
+      background: #000;
+      color: #0f0;
+      font-family: monospace;
+      height: 200px;
+      overflow-y: auto;
+      padding: 10px;
+      font-size: 14px;
+    }
+
+    #live-data p {
+      font-size: 14px;
+      margin: 5px 0;
+    }
+
+    .title {
+      font-size: 16px;
+      font-weight: bold;
+      margin-bottom: 8px;
+    }
   </style>
 </head>
 <body>
-  <div id="map"></div>
 
+  <!-- 1. Map -->
+  <div class="panel" id="map-container">
+    <div class="title">Live Map</div>
+    <div id="map"></div>
+  </div>
+
+  <!-- 2. Camera Feed -->
+  <div class="panel" id="camera">
+    <div class="title">Camera Feed</div>
+    <!-- Example: MJPEG stream or WebRTC -->
+    <img src="http://your-raspberry-pi-ip:8080/stream" alt="Live Camera Feed">
+  </div>
+
+  <!-- 3 & 4. Control Buttons -->
+  <div class="panel" id="controls">
+    <div class="title">Controls</div>
+    <button id="start">Start</button>
+    <button id="stop">Stop</button>
+    <button id="rtl">Return to Launch</button>
+  </div>
+
+  <!-- 5. Raspberry Pi Terminal -->
+  <div class="panel" id="terminal">
+    <div class="title">Raspberry Pi Terminal</div>
+    <pre>> Booting Drone...</pre>
+    <pre>> Connecting to GPS...</pre>
+    <pre>> Ready for command.</pre>
+  </div>
+
+  <!-- 6. Live Drone Data -->
+  <div class="panel" id="live-data">
+    <div class="title">Live Drone Data</div>
+    <p>Altitude: <span id="altitude">0 m</span></p>
+    <p>Speed: <span id="speed">0 m/s</span></p>
+    <p>Battery: <span id="battery">100%</span></p>
+  </div>
+
+  <!-- Script for Map and Mock Data -->
   <script>
-    // Initialize the map
-    const map = L.map('map').setView([0, 0], 2); // default view before location is found
-
-    // Add OpenStreetMap tiles
+    // Initialize Leaflet map
+    const map = L.map('map').setView([0, 0], 2);
     L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-      attribution: '© OpenStreetMap contributors'
+      attribution: '© OpenStreetMap'
     }).addTo(map);
 
-    // Check if browser supports geolocation
+    // Use geolocation to center map
     if (navigator.geolocation) {
       navigator.geolocation.getCurrentPosition(
-        position => {
-          const lat = position.coords.latitude;
-          const lng = position.coords.longitude;
-
-          // Set view to user location
-          map.setView([lat, lng], 13);
-
-          // Add marker at user's location
-          L.marker([lat, lng]).addTo(map)
-            .bindPopup("You are here!")
-            .openPopup();
+        pos => {
+          const lat = pos.coords.latitude;
+          const lng = pos.coords.longitude;
+          map.setView([lat, lng], 15);
+          L.marker([lat, lng]).addTo(map).bindPopup("Your Location").openPopup();
         },
-        error => {
-          alert("Geolocation failed: " + error.message);
-        }
+        () => alert("Unable to access location.")
       );
-    } else {
-      alert("Geolocation is not supported by your browser.");
     }
+
+    // Simulated live data updates
+    setInterval(() => {
+      document.getElementById("altitude").textContent = (Math.random() * 100).toFixed(2) + " m";
+      document.getElementById("speed").textContent = (Math.random() * 15).toFixed(2) + " m/s";
+      document.getElementById("battery").textContent = (80 + Math.random() * 20).toFixed(0) + "%";
+    }, 2000);
+
+    // Button events
+    document.getElementById("start").onclick = () => alert("Drone started.");
+    document.getElementById("stop").onclick = () => alert("Drone stopped.");
+    document.getElementById("rtl").onclick = () => alert("Returning to launch point...");
   </script>
+
 </body>
 </html>
